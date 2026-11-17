@@ -40,12 +40,12 @@ object YouTubeFeedRepository {
     private const val EDUCATION_QUERY =
         "educational science technology programming history engineering mathematics documentary"
 
-    fun load(apiKey: String): List<FeedVideo> {
+    fun load(apiKey: String, educationOnly: Boolean): List<FeedVideo> {
         require(apiKey.isNotBlank()) { "Add a YouTube Data API key in Profile settings first." }
         val query = listOf(
             "part" to "snippet",
             "type" to "video",
-            "q" to EDUCATION_QUERY,
+            "q" to if (educationOnly) EDUCATION_QUERY else "science technology news engineering programming documentary",
             "maxResults" to "50",
             "regionCode" to "IN",
             "relevanceLanguage" to "en",
@@ -83,7 +83,7 @@ object YouTubeFeedRepository {
                 val channel = snippet.optString("channelTitle")
                 val description = snippet.optString("description")
                 val report = AuthenticityEngine.evaluate(title, channel, description)
-                if (report.score < 65 || report.verdict.startsWith("Likely entertainment")) continue
+                if (educationOnly && (report.score < 65 || report.verdict.startsWith("Likely entertainment"))) continue
                 val thumbnails = snippet.optJSONObject("thumbnails")
                 val thumbnail = thumbnails?.optJSONObject("high")?.optString("url")
                     ?: thumbnails?.optJSONObject("medium")?.optString("url").orEmpty()
@@ -103,6 +103,7 @@ object YouTubeFeedRepository {
 @Composable
 fun EducationFeed(
     apiKey: String,
+    educationOnly: Boolean,
     refreshToken: Int,
     onOpenSettings: () -> Unit,
     onRefresh: () -> Unit,
@@ -113,7 +114,7 @@ fun EducationFeed(
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
 
-    LaunchedEffect(apiKey, refreshToken) {
+    LaunchedEffect(apiKey, educationOnly, refreshToken) {
         if (apiKey.isBlank()) {
             videos = emptyList()
             error = ""
@@ -122,8 +123,8 @@ fun EducationFeed(
         loading = true
         error = ""
         try {
-            videos = withContext(Dispatchers.IO) { YouTubeFeedRepository.load(apiKey) }
-            if (videos.isEmpty()) error = "No videos passed the current education metadata filter. Try refreshing later."
+            videos = withContext(Dispatchers.IO) { YouTubeFeedRepository.load(apiKey, educationOnly) }
+            if (videos.isEmpty()) error = if (educationOnly) "No videos passed the education metadata filter. Try refreshing later." else "No videos found. Try refreshing later."
         } catch (e: Exception) {
             error = e.localizedMessage ?: "Could not load the YouTube feed."
             videos = emptyList()
@@ -139,8 +140,8 @@ fun EducationFeed(
         item {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Authentic learning feed", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Education and knowledge videos ranked by metadata signals")
+                    Text(if (educationOnly) "Education learning feed" else "Discover feed", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(if (educationOnly) "Education results filtered by metadata signals" else "Broader safe-search results from YouTube")
                 }
                 IconButton(onClick = onRefresh) {
                     Icon(Icons.Default.Refresh, contentDescription = "Refresh education feed")
