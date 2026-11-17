@@ -147,9 +147,33 @@ fun CommentAssistant(modifier: Modifier = Modifier) {
         item {
             Button(
                 onClick = {
-                    draft = CommentDraftEngine.create(reaction, videoContext, sourceLanguage.code, firmTone)
-                    translated = ""
-                    translateDraft(draft)
+                    scope.launch {
+                        busy = true
+                        translated = ""
+                        status = "Gemini AI comment তৈরি করছে…"
+                        try {
+                            draft = if (geminiApiKey.isNotBlank()) {
+                                withContext(Dispatchers.IO) {
+                                    GeminiCommentService.generate(
+                                        apiKey = geminiApiKey,
+                                        reaction = reaction,
+                                        videoContext = videoContext,
+                                        language = sourceLanguage.label,
+                                        firm = firmTone
+                                    )
+                                }
+                            } else {
+                                CommentDraftEngine.create(reaction, videoContext, sourceLanguage.code, firmTone)
+                            }
+                            status = if (geminiApiKey.isNotBlank()) "Gemini AI draft তৈরি হয়েছে। Review করো।" else "Gemini key নেই — local draft তৈরি হয়েছে। AI চালাতে API key দাও।"
+                            busy = false
+                            translateDraft(draft)
+                        } catch (e: Exception) {
+                            val errorMessage = e.localizedMessage ?: "Unknown error"
+                            status = "Gemini request failed: $errorMessage"
+                            busy = false
+                        }
+                    }
                 },
                 enabled = reaction.isNotBlank() && !busy,
                 modifier = Modifier.fillMaxWidth()
@@ -215,7 +239,7 @@ fun CommentAssistant(modifier: Modifier = Modifier) {
         }
         item {
             Text(
-                "এটি প্রথম offline draft assistant; কোনো ভিডিও নিজে দেখে fact-check করে না। অনুবাদের জন্য ভাষার মডেল প্রথমবার ইন্টারনেট থেকে নামতে পারে, এরপর ডিভাইসেই অনুবাদ হয়। পোস্ট করার আগে দুই ভাষার খসড়া যাচাই করে YouTube-এ নিজে Post করো।",
+                "Gemini AI তোমার লেখা প্রতিক্রিয়া ও ভিডিওর শিরোনাম/বিষয় থেকে draft তৈরি করে; এটি ভিডিও নিজে দেখে না বা তথ্য fact-check করে না। API key ছাড়া local template ব্যবহার হয়। অনুবাদ on-device ML Kit দিয়ে হয়। পোস্ট করার আগে খসড়া যাচাই করে YouTube-এ নিজে Post করো।",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
