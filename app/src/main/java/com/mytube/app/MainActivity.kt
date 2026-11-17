@@ -25,10 +25,19 @@ class MainActivity : ComponentActivity() {
             var autoPlayNext by remember { mutableStateOf(preferences.getBoolean("auto_play_next", false)) }
             var downloadsEnabled by remember { mutableStateOf(preferences.getBoolean("downloads_enabled", false)) }
             var educationOnly by remember { mutableStateOf(preferences.getBoolean("education_only", true)) }
+            var youtubeApiKey by remember { mutableStateOf(preferences.getString("youtube_api_key", "") ?: "") }
+            var feedRefreshToken by remember { mutableIntStateOf(0) }
 
             MaterialTheme(colorScheme = darkColorScheme()) {
                 MyTubeScreen(
                     educationOnly = educationOnly,
+                    youtubeApiKey = youtubeApiKey,
+                    onYoutubeApiKeyChanged = {
+                        youtubeApiKey = it
+                        preferences.edit().putString("youtube_api_key", it).apply()
+                    },
+                    feedRefreshToken = feedRefreshToken,
+                    onRefreshFeed = { feedRefreshToken++ },
                     onEducationOnlyChanged = {
                         educationOnly = it
                         preferences.edit().putBoolean("education_only", it).apply()
@@ -53,6 +62,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MyTubeScreen(
     educationOnly: Boolean,
+    youtubeApiKey: String,
+    onYoutubeApiKeyChanged: (String) -> Unit,
+    feedRefreshToken: Int,
+    onRefreshFeed: () -> Unit,
     onEducationOnlyChanged: (Boolean) -> Unit,
     ownAdsEnabled: Boolean,
     onOwnAdsChanged: (Boolean) -> Unit,
@@ -97,12 +110,39 @@ private fun MyTubeScreen(
         when (tab) {
             "Verify" -> AuthenticityChecker(Modifier.fillMaxSize().padding(padding))
             "Comment" -> CommentAssistant(Modifier.fillMaxSize().padding(padding))
+            "Home" -> EducationFeed(
+                apiKey = youtubeApiKey,
+                refreshToken = feedRefreshToken,
+                onOpenSettings = { tab = "Profile" },
+                onRefresh = onRefreshFeed,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
             "Profile" -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item { Text("Your account", style = MaterialTheme.typography.headlineSmall) }
-                item { Text("Google sign-in is not configured yet.") }
+                item {
+                    Text("Google sign-in setup", style = MaterialTheme.typography.titleLarge)
+                    Text("Google login is not connected yet. It requires an Android OAuth client configured for package com.mytube.app and this APK's SHA-1 signing certificate. Authentication also needs secure server-side ID-token verification.")
+                    Text("YouTube account access (subscriptions/comments) is a separate permission request; signing in alone does not grant it.")
+                }
+                item { HorizontalDivider() }
+                item { Text("YouTube feed connection", style = MaterialTheme.typography.titleLarge) }
+                item {
+                    OutlinedTextField(
+                        value = youtubeApiKey,
+                        onValueChange = onYoutubeApiKeyChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("YouTube Data API v3 key") },
+                        placeholder = { Text("Paste your API key") },
+                        singleLine = true
+                    )
+                    Text("Create a Google Cloud project, enable YouTube Data API v3, create an API key and restrict it to this API. The key is saved only in this app's local preferences; do not put it in GitHub.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = onRefreshFeed, enabled = youtubeApiKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                        Text("Save key and refresh education feed")
+                    }
+                }
                 item { HorizontalDivider() }
                 item { Text("Feed preferences", style = MaterialTheme.typography.titleLarge) }
                 item { SettingSwitch("Education-only feed", "Hide entertainment and movie-clip content when a live feed is connected.", educationOnly, onEducationOnlyChanged) }
