@@ -6,13 +6,17 @@ Kotlin + Jetpack Compose Android starter.
 - Native dark Material 3 interface
 - Home, Shorts, Subscriptions, Library, Search and Profile navigation
 - Persistent toggle for MyTube-owned ads only
+- Persistent playback preferences: background audio, picture-in-picture, auto-play next, and downloads
 - Video links open through the official YouTube app or browser
 - GitHub Actions debug APK build
 
-## Current limitations
-This first build is a starter UI. Google sign-in, live YouTube search, subscriptions/history sync, AdMob, and any supported embedded playback integration are not connected yet.
+## Playback status
+The playback switches are preference controls only at this stage. A MyTube media player/service is not connected yet, so switching them does not start background playback, PiP, auto-play, or downloads. These features can be implemented for media that MyTube owns or is licensed to play/download.
 
-YouTube-served advertisements are not blocked or modified. The app does not extract streams, download videos, or implement unauthorized background playback. Video links are handed to the official YouTube app/browser.
+YouTube-served videos continue to open in the official YouTube app/browser. The app does not extract streams, download YouTube videos, bypass YouTube background-play restrictions, or hide/alter YouTube advertisements.
+
+## Not connected yet
+Google sign-in, live YouTube search, subscriptions/history sync, AdMob, and authorized in-app media playback are not connected yet.
 
 Review YouTube Developer Policies before adding API features:
 https://developers.google.com/youtube/terms/developer-policies
