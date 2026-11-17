@@ -11,11 +11,13 @@ object GeminiCommentService {
     fun generate(apiKey: String, reaction: String, videoContext: String, language: String, firm: Boolean): String {
         require(apiKey.isNotBlank()) { "Gemini API key is required." }
         val tone = if (firm) "firm but respectful" else "polite, constructive and friendly"
+        val safeReaction = reaction.trim()
+        val safeContext = videoContext.trim().ifBlank { "Not provided" }
         val prompt = """
             Write one natural YouTube comment in $language.
             Tone: $tone.
-            User's reaction: \${reaction.trim()}
-            Video title or context: \${videoContext.trim().ifBlank { "Not provided" }}
+            User's reaction: $safeReaction
+            Video title or context: $safeContext
             Requirements:
             - Respond to the user's reaction; do not invent facts or claim to have watched the video.
             - Do not claim anything is false unless the user supplied evidence; phrase uncertainty carefully.
