@@ -38,7 +38,7 @@ data class FeedVideo(
 object YouTubeFeedRepository {
     private const val SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
     private const val EDUCATION_QUERY =
-        "education|science|technology|programming|history|engineering|mathematics|documentary"
+        "educational science technology programming history engineering mathematics documentary"
 
     fun load(apiKey: String): List<FeedVideo> {
         require(apiKey.isNotBlank()) { "Add a YouTube Data API key in Profile settings first." }
@@ -83,7 +83,7 @@ object YouTubeFeedRepository {
                 val channel = snippet.optString("channelTitle")
                 val description = snippet.optString("description")
                 val report = AuthenticityEngine.evaluate(title, channel, description)
-                if (report.score < 55 || report.verdict.startsWith("Likely entertainment")) continue
+                if (report.score < 65 || report.verdict.startsWith("Likely entertainment")) continue
                 val thumbnails = snippet.optJSONObject("thumbnails")
                 val thumbnail = thumbnails?.optJSONObject("high")?.optString("url")
                     ?: thumbnails?.optJSONObject("medium")?.optString("url").orEmpty()
