@@ -105,6 +105,7 @@ fun EducationFeed(
     apiKey: String,
     refreshToken: Int,
     onOpenSettings: () -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -141,8 +142,8 @@ fun EducationFeed(
                     Text("Authentic learning feed", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text("Education and knowledge videos ranked by metadata signals")
                 }
-                IconButton(onClick = { /* refresh is triggered by parent */ }) {
-                    Icon(Icons.Default.School, contentDescription = "Education feed")
+                IconButton(onClick = onRefresh) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh education feed")
                 }
             }
         }
