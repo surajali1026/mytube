@@ -27,7 +27,7 @@ object AuthenticityEngine {
         "song video", "comedy scene", "web series clip", "shorts edit"
     )
     private val referenceDomains = listOf(
-        "edu", "gov", "ac.in", "who.int", "un.org", " nasa.gov", " nature.com",
+        "who.int", "un.org", "nasa.gov", "nature.com",
         "science.org", "pubmed.ncbi.nlm.nih.gov", "arxiv.org", "britannica.com"
     )
 
@@ -52,11 +52,20 @@ object AuthenticityEngine {
             warnings += "No source link found in description"
         }
 
-        if (referenceDomains.any { domain -> description.lowercase().contains(domain.trim()) }) {
+        val linkedHosts = urls.mapNotNull { url ->
+            runCatching { java.net.URI(url).host?.lowercase()?.removePrefix("www.") }.getOrNull()
+        }
+        val hasInstitutionalDomain = linkedHosts.any { host ->
+            host.endsWith(".edu") || host.endsWith(".gov") || host.endsWith(".ac.in")
+        }
+        val hasKnownReference = linkedHosts.any { host ->
+            referenceDomains.any { domain -> host == domain || host.endsWith(".$domain") }
+        }
+        if (hasInstitutionalDomain || hasKnownReference) {
             score += 15
-            reasons += "Recognized research, education or public-information domain mentioned"
+            reasons += "Link points to a recognized education, research or public-information domain"
         } else {
-            warnings += "No recognized reference domain detected"
+            warnings += "No recognized institutional or research source URL detected"
         }
 
         val clickbait = clickbaitTerms.filter { all.contains(it) }
