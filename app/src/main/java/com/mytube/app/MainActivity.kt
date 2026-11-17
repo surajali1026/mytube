@@ -122,11 +122,7 @@ private fun MyTubeScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item { Text("Your account", style = MaterialTheme.typography.headlineSmall) }
-                item {
-                    Text("Google sign-in setup", style = MaterialTheme.typography.titleLarge)
-                    Text("Google login is not connected yet. It requires an Android OAuth client configured for package com.mytube.app and this APK's SHA-1 signing certificate. Authentication also needs secure server-side ID-token verification.")
-                    Text("YouTube account access (subscriptions/comments) is a separate permission request; signing in alone does not grant it.")
-                }
+                item { GoogleLoginCard() }
                 item { HorizontalDivider() }
                 item { Text("YouTube feed connection", style = MaterialTheme.typography.titleLarge) }
                 item {
