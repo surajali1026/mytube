@@ -175,7 +175,7 @@ fun EducationFeed(
                     Text(video.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(video.channel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        AssistChip(onClick = {}, label = { Text("Metadata score ${video.score}/100") })
+                        Text("Metadata score ${video.score}/100", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(8.dp))
                         Text("Tap to watch on YouTube", style = MaterialTheme.typography.labelSmall)
                     }
