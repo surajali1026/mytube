@@ -36,7 +36,7 @@ private data class PersonalVideo(
 private data class PersonalFeedData(val videos: List<PersonalVideo>, val subscriptions: List<String>)
 
 @Composable
-fun PersonalYouTubeFeed(modifier: Modifier = Modifier) {
+fun PersonalYouTubeFeed(onPlayVideo: (List<String>, Int) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val activity = context as? Activity
     val preferences = remember { context.getSharedPreferences("mytube_preferences", 0) }
@@ -138,7 +138,7 @@ fun PersonalYouTubeFeed(modifier: Modifier = Modifier) {
             item { Text("Videos for you", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
             items(videos, key = { it.id }) { video ->
                 Card(Modifier.fillMaxWidth().clickable {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=${video.id}")))
+                    onPlayVideo(videos.map { it.id }, videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0))
                 }) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (video.thumbnail.isNotBlank()) coil.compose.AsyncImage(
@@ -154,7 +154,7 @@ fun PersonalYouTubeFeed(modifier: Modifier = Modifier) {
             }
         }
         item {
-            Text("This combines recent uploads from your subscribed channels with YouTube search results based on your interests. It is not YouTube's proprietary Home recommendation algorithm. Videos open in the official YouTube app or browser.",
+            Text("This combines recent uploads from your subscribed channels with YouTube search results based on your interests. It is not YouTube's proprietary Home recommendation algorithm. Videos play using the official embedded YouTube player inside MyTube.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
