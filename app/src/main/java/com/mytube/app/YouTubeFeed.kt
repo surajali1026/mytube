@@ -109,6 +109,7 @@ fun EducationFeed(
     refreshToken: Int,
     onOpenSettings: () -> Unit,
     onRefresh: () -> Unit,
+    onPlayVideo: (List<FeedVideo>, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -171,8 +172,7 @@ fun EducationFeed(
         }
         items(videos, key = { it.id }) { video ->
             Card(Modifier.fillMaxWidth().clickable {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=${video.id}"))
-                context.startActivity(intent)
+                onPlayVideo(videos, videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0))
             }) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     if (video.thumbnail.isNotBlank()) {
@@ -188,7 +188,7 @@ fun EducationFeed(
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Text("Metadata score ${video.score}/100", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(8.dp))
-                        Text("Tap to watch on YouTube", style = MaterialTheme.typography.labelSmall)
+                        Text("Tap to play in MyTube", style = MaterialTheme.typography.labelSmall)
                     }
                     Text(video.verdict, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
                     if (video.reasons.isNotEmpty()) Text("Signals: ${video.reasons.joinToString(" • ")}", style = MaterialTheme.typography.bodySmall)
