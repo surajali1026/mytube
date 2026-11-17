@@ -71,6 +71,9 @@ private fun MyTubeScreen(
             TopAppBar(
                 title = { Text("MyTube", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = { tab = "Comment" }) {
+                        Icon(Icons.Default.Translate, contentDescription = "AI Comment Assistant")
+                    }
                     IconButton(onClick = { tab = "Verify" }) {
                         Icon(Icons.Default.VerifiedUser, contentDescription = "Authenticity checker")
                     }
@@ -93,6 +96,7 @@ private fun MyTubeScreen(
     ) { padding ->
         when (tab) {
             "Verify" -> AuthenticityChecker(Modifier.fillMaxSize().padding(padding))
+            "Comment" -> CommentAssistant(Modifier.fillMaxSize().padding(padding))
             "Profile" -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
