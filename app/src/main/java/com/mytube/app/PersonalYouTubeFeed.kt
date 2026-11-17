@@ -57,7 +57,7 @@ fun PersonalYouTubeFeed(modifier: Modifier = Modifier) {
                 videos = data.videos
                 subscriptions = data.subscriptions
                 connected = true
-                status = if (data.videos.isEmpty()) "No videos found. Change your interests or refresh." else "Loaded ${{data.videos.size} videos from your subscriptions and interests."
+                status = if (data.videos.isEmpty()) "No videos found. Change your interests or refresh." else "Loaded ${data.videos.size} videos from your subscriptions and interests."
             } catch (e: Exception) {
                 status = e.localizedMessage ?: "Could not load your YouTube feed."
             } finally { busy = false }
@@ -131,14 +131,14 @@ fun PersonalYouTubeFeed(modifier: Modifier = Modifier) {
         if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         if (status.isNotBlank()) item { Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (subscriptions.isNotEmpty()) {
-            item { Text("Your subscriptions (${{subscriptions.size})", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
+            item { Text("Your subscriptions (${subscriptions.size})", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
             items(subscriptions) { channel -> AssistChip(onClick = {}, label = { Text(channel) }) }
         }
         if (videos.isNotEmpty()) {
             item { Text("Videos for you", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
             items(videos, key = { it.id }) { video ->
                 Card(Modifier.fillMaxWidth().clickable {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=${{video.id}")))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=${video.id}")))
                 }) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (video.thumbnail.isNotBlank()) coil.compose.AsyncImage(
@@ -189,7 +189,7 @@ private object PersonalYouTubeRepository {
         // Limit channel playlist calls to 25 per refresh to keep API quota and loading time reasonable.
         channelIds.take(25).forEach { channelId ->
             val playlist = uploads[channelId] ?: return@forEach
-            val items = get("$API/playlistItems?part=snippet&playlistId=${{enc(playlist)}&maxResults=3", token).optJSONArray("items") ?: return@forEach
+            val items = get("$API/playlistItems?part=snippet&playlistId=${enc(playlist)}&maxResults=3", token).optJSONArray("items") ?: return@forEach
             for (i in 0 until items.length()) {
                 val snippet = items.optJSONObject(i)?.optJSONObject("snippet") ?: continue
                 val id = snippet.optJSONObject("resourceId")?.optString("videoId").orEmpty()
@@ -201,7 +201,7 @@ private object PersonalYouTubeRepository {
         }
 
         val query = interests.trim().ifBlank { "science technology education" }
-        val found = get("$API/search?part=snippet&type=video&maxResults=20&order=relevance&safeSearch=strict&regionCode=IN&relevanceLanguage=en&q=${{enc(query)}", token).optJSONArray("items")
+        val found = get("$API/search?part=snippet&type=video&maxResults=20&order=relevance&safeSearch=strict&regionCode=IN&relevanceLanguage=en&q=${enc(query)}", token).optJSONArray("items")
         if (found != null) for (i in 0 until found.length()) {
             val item = found.optJSONObject(i) ?: continue
             val id = item.optJSONObject("id")?.optString("videoId").orEmpty()
