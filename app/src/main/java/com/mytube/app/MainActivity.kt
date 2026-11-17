@@ -1,6 +1,9 @@
 package com.mytube.app
 
 import android.os.Bundle
+import android.os.Build
+import android.app.PictureInPictureParams
+import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -15,6 +18,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        val prefs = getSharedPreferences("mytube_preferences", MODE_PRIVATE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            prefs.getBoolean("picture_in_picture", true) &&
+            prefs.getBoolean("player_open", false)
+        ) {
+            enterPictureInPictureMode(
+                PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val preferences = getSharedPreferences("mytube_preferences", MODE_PRIVATE)
@@ -82,6 +98,11 @@ private fun MyTubeScreen(
     var playingQueue by remember { mutableStateOf<List<String>>(emptyList()) }
     var playingIndex by remember { mutableIntStateOf(0) }
     var playerOpen by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(playerOpen) {
+        context.getSharedPreferences("mytube_preferences", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("player_open", playerOpen).apply()
+    }
     Box(Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
@@ -162,7 +183,7 @@ private fun MyTubeScreen(
                 item { SettingSwitch("Education-only feed", "ON: rank and filter educational videos. OFF: show broader safe-search results.", educationOnly, onEducationOnlyChanged) }
                 item { Text("Playback settings", style = MaterialTheme.typography.titleLarge) }
                 item { SettingSwitch("Background play", "Only provider-permitted playback can continue in background. YouTube embedded videos may pause when app is backgrounded.", backgroundAudio, onBackgroundAudioChanged) }
-                item { SettingSwitch("Picture-in-picture", "Floating video window for supported MyTube playback.", pictureInPicture, onPictureInPictureChanged) }
+                item { SettingSwitch("Picture-in-picture", "When you press Home during playback, keep the video in a floating window (Android 8.0+). This is not background audio or ad removal.", pictureInPicture, onPictureInPictureChanged) }
                 item { SettingSwitch("Auto-play next", "Play the next video in the current feed when the current video ends.", autoPlayNext, onAutoPlayNextChanged) }
                 item { SettingSwitch("Allow downloads", "Only for videos you own or are licensed to download.", downloadsEnabled, onDownloadsEnabledChanged) }
                 item { HorizontalDivider() }
@@ -177,7 +198,7 @@ private fun MyTubeScreen(
                 }
                 item {
                     Text(
-                        "MyTube ads toggle controls only ads owned by this app; it does not remove YouTube ads. Background play is subject to YouTube embedded-player restrictions. MyTube does not extract or download YouTube streams.",
+                        "Picture-in-picture keeps the embedded player visible in a floating window on supported Android versions. It does not force audio-only background playback or remove YouTube ads. MyTube does not extract or download YouTube streams.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
