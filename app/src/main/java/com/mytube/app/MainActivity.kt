@@ -112,6 +112,7 @@ private fun MyTubeScreen(
             "Comment" -> CommentAssistant(Modifier.fillMaxSize().padding(padding))
             "Home" -> EducationFeed(
                 apiKey = youtubeApiKey,
+                educationOnly = educationOnly,
                 refreshToken = feedRefreshToken,
                 onOpenSettings = { tab = "Profile" },
                 onRefresh = onRefreshFeed,
@@ -141,7 +142,7 @@ private fun MyTubeScreen(
                 }
                 item { HorizontalDivider() }
                 item { Text("Feed preferences", style = MaterialTheme.typography.titleLarge) }
-                item { SettingSwitch("Education-only feed", "Hide entertainment and movie-clip content when a live feed is connected.", educationOnly, onEducationOnlyChanged) }
+                item { SettingSwitch("Education-only feed", "ON: rank and filter educational videos. OFF: show broader safe-search results.", educationOnly, onEducationOnlyChanged) }
                 item { Text("Playback settings", style = MaterialTheme.typography.titleLarge) }
                 item { SettingSwitch("Background audio", "For MyTube-owned or licensed audio only.", backgroundAudio, onBackgroundAudioChanged) }
                 item { SettingSwitch("Picture-in-picture", "Floating video window for supported MyTube playback.", pictureInPicture, onPictureInPictureChanged) }
@@ -152,7 +153,7 @@ private fun MyTubeScreen(
                 item { SettingSwitch("Show MyTube ads", "Controls only ads owned by this app.", ownAdsEnabled, onOwnAdsChanged) }
                 item {
                     Text(
-                        "The authenticity checker currently evaluates title, channel name and description text entered by you. It does not watch the video, verify every claim, or prove that a channel is trustworthy. Live YouTube search/feed is not connected yet.",
+                        "The feed is connected to YouTube Data API v3 when you add your own API key. The checker and feed use title, channel and description metadata only; they do not watch videos or verify factual claims.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -190,7 +191,7 @@ private fun MyTubeScreen(
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.SemiBold
                             )
-                            Text("The live YouTube feed is not connected yet. No random demo videos are shown.")
+                            Text("This section is not connected to private YouTube account data yet. Open the official YouTube app to use this feature.")
                             Button(onClick = { tab = "Verify" }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Default.Shield, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
@@ -201,7 +202,7 @@ private fun MyTubeScreen(
                 }
                 item {
                     Text(
-                        "Next integration: connect YouTube Data API search, then run these filters on each result before it enters this feed. API credentials must be configured securely and must not be committed to this public repository.",
+                        "Shorts, subscriptions and personal library sync require additional playback and YouTube OAuth integration. They are not active in this build.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
