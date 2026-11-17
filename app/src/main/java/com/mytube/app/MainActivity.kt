@@ -33,11 +33,39 @@ class MainActivity : ComponentActivity() {
         val preferences = getSharedPreferences("mytube_preferences", MODE_PRIVATE)
         setContent {
             var ownAdsEnabled by remember { mutableStateOf(preferences.getBoolean("own_ads_enabled", true)) }
+            var backgroundAudio by remember { mutableStateOf(preferences.getBoolean("background_audio", false)) }
+            var pictureInPicture by remember { mutableStateOf(preferences.getBoolean("picture_in_picture", true)) }
+            var autoPlayNext by remember { mutableStateOf(preferences.getBoolean("auto_play_next", false)) }
+            var downloadsEnabled by remember { mutableStateOf(preferences.getBoolean("downloads_enabled", false)) }
+
             MaterialTheme(colorScheme = darkColorScheme()) {
-                MyTubeScreen(ownAdsEnabled, onOwnAdsChanged = {
-                    ownAdsEnabled = it
-                    preferences.edit().putBoolean("own_ads_enabled", it).apply()
-                })
+                MyTubeScreen(
+                    ownAdsEnabled = ownAdsEnabled,
+                    onOwnAdsChanged = {
+                        ownAdsEnabled = it
+                        preferences.edit().putBoolean("own_ads_enabled", it).apply()
+                    },
+                    backgroundAudio = backgroundAudio,
+                    onBackgroundAudioChanged = {
+                        backgroundAudio = it
+                        preferences.edit().putBoolean("background_audio", it).apply()
+                    },
+                    pictureInPicture = pictureInPicture,
+                    onPictureInPictureChanged = {
+                        pictureInPicture = it
+                        preferences.edit().putBoolean("picture_in_picture", it).apply()
+                    },
+                    autoPlayNext = autoPlayNext,
+                    onAutoPlayNextChanged = {
+                        autoPlayNext = it
+                        preferences.edit().putBoolean("auto_play_next", it).apply()
+                    },
+                    downloadsEnabled = downloadsEnabled,
+                    onDownloadsEnabledChanged = {
+                        downloadsEnabled = it
+                        preferences.edit().putBoolean("downloads_enabled", it).apply()
+                    }
+                )
             }
         }
     }
@@ -45,7 +73,18 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MyTubeScreen(ownAdsEnabled: Boolean, onOwnAdsChanged: (Boolean) -> Unit) {
+private fun MyTubeScreen(
+    ownAdsEnabled: Boolean,
+    onOwnAdsChanged: (Boolean) -> Unit,
+    backgroundAudio: Boolean,
+    onBackgroundAudioChanged: (Boolean) -> Unit,
+    pictureInPicture: Boolean,
+    onPictureInPictureChanged: (Boolean) -> Unit,
+    autoPlayNext: Boolean,
+    onAutoPlayNextChanged: (Boolean) -> Unit,
+    downloadsEnabled: Boolean,
+    onDownloadsEnabledChanged: (Boolean) -> Unit
+) {
     val context = LocalContext.current
     var tab by remember { mutableStateOf("Home") }
     var query by remember { mutableStateOf("") }
@@ -77,22 +116,30 @@ private fun MyTubeScreen(ownAdsEnabled: Boolean, onOwnAdsChanged: (Boolean) -> U
                 Spacer(Modifier.height(12.dp))
                 Text("Live search will be connected after a YouTube Data API key is configured.")
             }
-            "Profile" -> Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
+            "Profile" -> Column(
+                Modifier.fillMaxSize().padding(padding).padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text("Your account", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(8.dp))
                 Text("Google sign-in is not configured yet.")
-                Spacer(Modifier.height(24.dp))
-                Text("Settings", style = MaterialTheme.typography.titleLarge)
-                Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Show MyTube ads")
-                        Text("Controls only ads owned by this app.", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Switch(checked = ownAdsEnabled, onCheckedChange = onOwnAdsChanged)
-                }
-                Spacer(Modifier.height(12.dp))
-                Text("This setting does not hide or alter advertisements served by YouTube.",
-                    style = MaterialTheme.typography.bodySmall)
+                HorizontalDivider()
+                Text("Playback settings", style = MaterialTheme.typography.titleLarge)
+                SettingSwitch("Background audio", "For MyTube-owned or licensed audio only.", backgroundAudio, onBackgroundAudioChanged)
+                SettingSwitch("Picture-in-picture", "Floating video window for supported MyTube playback.", pictureInPicture, onPictureInPictureChanged)
+                SettingSwitch("Auto-play next", "Automatically continue supported MyTube playlists.", autoPlayNext, onAutoPlayNextChanged)
+                SettingSwitch("Allow downloads", "Only for videos you own or are licensed to download.", downloadsEnabled, onDownloadsEnabledChanged)
+                HorizontalDivider()
+                Text("App settings", style = MaterialTheme.typography.titleLarge)
+                SettingSwitch("Show MyTube ads", "Controls only ads owned by this app.", ownAdsEnabled, onOwnAdsChanged)
+                Text(
+                    "Playback and download controls are saved, but their media-player services are not connected yet. YouTube links currently open in the official YouTube app/browser. MyTube will not download YouTube videos or bypass YouTube background-play restrictions.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "This app does not hide or alter advertisements served by YouTube.",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             else -> LazyColumn(Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -126,5 +173,25 @@ private fun MyTubeScreen(ownAdsEnabled: Boolean, onOwnAdsChanged: (Boolean) -> U
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SettingSwitch(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.Medium)
+            Text(description, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
