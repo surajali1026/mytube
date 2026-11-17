@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -173,6 +175,14 @@ fun EducationFeed(
                 context.startActivity(intent)
             }) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                    if (video.thumbnail.isNotBlank()) {
+                        AsyncImage(
+                            model = video.thumbnail,
+                            contentDescription = "Video thumbnail",
+                            modifier = Modifier.fillMaxWidth().height(190.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                     Text(video.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(video.channel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
