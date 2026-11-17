@@ -13,7 +13,15 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
@@ -31,6 +39,9 @@ private val commentLanguages = listOf(
 fun CommentAssistant(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val preferences = remember { context.getSharedPreferences("mytube_preferences", Context.MODE_PRIVATE) }
+    var geminiApiKey by remember { mutableStateOf(preferences.getString("gemini_api_key", "") ?: "") }
+    val scope = rememberCoroutineScope()
     var reaction by remember { mutableStateOf("") }
     var videoContext by remember { mutableStateOf("") }
     var sourceLanguage by remember { mutableStateOf(commentLanguages[0]) }
@@ -92,6 +103,25 @@ fun CommentAssistant(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("ভিডিওর বিষয় বা শিরোনাম (ঐচ্ছিক)") },
                 minLines = 2
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = geminiApiKey,
+                onValueChange = {
+                    geminiApiKey = it
+                    preferences.edit().putString("gemini_api_key", it.trim()).apply()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Gemini API key") },
+                placeholder = { Text("Google AI Studio থেকে API key বসাও") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true
+            )
+            Text(
+                "Gemini AI দিয়ে comment তৈরি হবে। API key এই ডিভাইসে রাখা হবে; public GitHub-এ দিও না।",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         item {
