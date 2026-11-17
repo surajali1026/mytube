@@ -79,6 +79,10 @@ private fun MyTubeScreen(
     onDownloadsEnabledChanged: (Boolean) -> Unit
 ) {
     var tab by remember { mutableStateOf("Home") }
+    var playingQueue by remember { mutableStateOf<List<String>>(emptyList()) }
+    var playingIndex by remember { mutableIntStateOf(0) }
+    var playerOpen by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -116,9 +120,21 @@ private fun MyTubeScreen(
                 refreshToken = feedRefreshToken,
                 onOpenSettings = { tab = "Profile" },
                 onRefresh = onRefreshFeed,
+                onPlayVideo = { videos, index ->
+                    playingQueue = videos.map { it.id }
+                    playingIndex = index.coerceIn(videos.indices)
+                    playerOpen = true
+                },
                 modifier = Modifier.fillMaxSize().padding(padding)
             )
-            "Subscriptions" -> PersonalYouTubeFeed(modifier = Modifier.fillMaxSize().padding(padding))
+            "Subscriptions" -> PersonalYouTubeFeed(
+                onPlayVideo = { ids, index ->
+                    playingQueue = ids
+                    playingIndex = index.coerceIn(ids.indices)
+                    playerOpen = true
+                },
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
             "Profile" -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -145,9 +161,9 @@ private fun MyTubeScreen(
                 item { Text("Feed preferences", style = MaterialTheme.typography.titleLarge) }
                 item { SettingSwitch("Education-only feed", "ON: rank and filter educational videos. OFF: show broader safe-search results.", educationOnly, onEducationOnlyChanged) }
                 item { Text("Playback settings", style = MaterialTheme.typography.titleLarge) }
-                item { SettingSwitch("Background audio", "For MyTube-owned or licensed audio only.", backgroundAudio, onBackgroundAudioChanged) }
+                item { SettingSwitch("Background play", "Only provider-permitted playback can continue in background. YouTube embedded videos may pause when app is backgrounded.", backgroundAudio, onBackgroundAudioChanged) }
                 item { SettingSwitch("Picture-in-picture", "Floating video window for supported MyTube playback.", pictureInPicture, onPictureInPictureChanged) }
-                item { SettingSwitch("Auto-play next", "Automatically continue supported MyTube playlists.", autoPlayNext, onAutoPlayNextChanged) }
+                item { SettingSwitch("Auto-play next", "Play the next video in the current feed when the current video ends.", autoPlayNext, onAutoPlayNextChanged) }
                 item { SettingSwitch("Allow downloads", "Only for videos you own or are licensed to download.", downloadsEnabled, onDownloadsEnabledChanged) }
                 item { HorizontalDivider() }
                 item { Text("App settings", style = MaterialTheme.typography.titleLarge) }
@@ -161,7 +177,7 @@ private fun MyTubeScreen(
                 }
                 item {
                     Text(
-                        "Playback and download controls are saved preferences only; their media services are not connected. YouTube links will use the official YouTube app/browser. MyTube will not extract or download YouTube streams or bypass background-play restrictions.",
+                        "MyTube ads toggle controls only ads owned by this app; it does not remove YouTube ads. Background play is subject to YouTube embedded-player restrictions. MyTube does not extract or download YouTube streams.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -210,6 +226,17 @@ private fun MyTubeScreen(
                 }
             }
         }
+    }
+    if (playerOpen && playingQueue.isNotEmpty()) {
+        YouTubeFullscreenPlayer(
+            videoId = playingQueue[playingIndex],
+            onClose = { playerOpen = false },
+            onEnded = {
+                if (autoPlayNext && playingIndex < playingQueue.lastIndex) playingIndex++
+                else playerOpen = false
+            }
+        )
+    }
     }
 }
 
