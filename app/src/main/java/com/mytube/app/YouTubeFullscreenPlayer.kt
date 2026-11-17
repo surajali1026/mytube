@@ -1,6 +1,8 @@
 package com.mytube.app
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -15,12 +17,33 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.viewinterop.AndroidView
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun YouTubeFullscreenPlayer(videoId: String, onClose: () -> Unit, onEnded: () -> Unit) {
     BackHandler(onBack = onClose)
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(activity) {
+        val window = activity?.window
+        val oldOrientation = activity?.requestedOrientation
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose {
+            activity?.requestedOrientation = oldOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            if (window != null) {
+                WindowCompat.setDecorFitsSystemWindows(window, true)
+                WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+    }
     var webView by remember { mutableStateOf<WebView?>(null) }
     DisposableEffect(Unit) {
         onDispose {
@@ -36,7 +59,7 @@ fun YouTubeFullscreenPlayer(videoId: String, onClose: () -> Unit, onEnded: () ->
                     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
-                    settings.mediaPlaybackRequiresUserGesture = true
+                    settings.mediaPlaybackRequiresUserGesture = false
                     webChromeClient = WebChromeClient()
                     webViewClient = WebViewClient()
                     addJavascriptInterface(object {
