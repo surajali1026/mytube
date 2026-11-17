@@ -118,6 +118,7 @@ private fun MyTubeScreen(
                 onRefresh = onRefreshFeed,
                 modifier = Modifier.fillMaxSize().padding(padding)
             )
+            "Subscriptions" -> PersonalYouTubeFeed(modifier = Modifier.fillMaxSize().padding(padding))
             "Profile" -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
