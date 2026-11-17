@@ -1,31 +1,18 @@
 package com.mytube.app
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-private data class Video(val title: String, val channel: String, val id: String)
-private val sampleVideos = listOf(
-    Video("Welcome to MyTube", "MyTube", "M7lc1UVf-VE"),
-    Video("Explore videos from YouTube", "YouTube", "jNQXAC9IVRw"),
-    Video("Search and discover videos", "MyTube Demo", "dQw4w9WgXcQ")
-)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,34 +24,25 @@ class MainActivity : ComponentActivity() {
             var pictureInPicture by remember { mutableStateOf(preferences.getBoolean("picture_in_picture", true)) }
             var autoPlayNext by remember { mutableStateOf(preferences.getBoolean("auto_play_next", false)) }
             var downloadsEnabled by remember { mutableStateOf(preferences.getBoolean("downloads_enabled", false)) }
+            var educationOnly by remember { mutableStateOf(preferences.getBoolean("education_only", true)) }
 
             MaterialTheme(colorScheme = darkColorScheme()) {
                 MyTubeScreen(
+                    educationOnly = educationOnly,
+                    onEducationOnlyChanged = {
+                        educationOnly = it
+                        preferences.edit().putBoolean("education_only", it).apply()
+                    },
                     ownAdsEnabled = ownAdsEnabled,
-                    onOwnAdsChanged = {
-                        ownAdsEnabled = it
-                        preferences.edit().putBoolean("own_ads_enabled", it).apply()
-                    },
+                    onOwnAdsChanged = { ownAdsEnabled = it; preferences.edit().putBoolean("own_ads_enabled", it).apply() },
                     backgroundAudio = backgroundAudio,
-                    onBackgroundAudioChanged = {
-                        backgroundAudio = it
-                        preferences.edit().putBoolean("background_audio", it).apply()
-                    },
+                    onBackgroundAudioChanged = { backgroundAudio = it; preferences.edit().putBoolean("background_audio", it).apply() },
                     pictureInPicture = pictureInPicture,
-                    onPictureInPictureChanged = {
-                        pictureInPicture = it
-                        preferences.edit().putBoolean("picture_in_picture", it).apply()
-                    },
+                    onPictureInPictureChanged = { pictureInPicture = it; preferences.edit().putBoolean("picture_in_picture", it).apply() },
                     autoPlayNext = autoPlayNext,
-                    onAutoPlayNextChanged = {
-                        autoPlayNext = it
-                        preferences.edit().putBoolean("auto_play_next", it).apply()
-                    },
+                    onAutoPlayNextChanged = { autoPlayNext = it; preferences.edit().putBoolean("auto_play_next", it).apply() },
                     downloadsEnabled = downloadsEnabled,
-                    onDownloadsEnabledChanged = {
-                        downloadsEnabled = it
-                        preferences.edit().putBoolean("downloads_enabled", it).apply()
-                    }
+                    onDownloadsEnabledChanged = { downloadsEnabled = it; preferences.edit().putBoolean("downloads_enabled", it).apply() }
                 )
             }
         }
@@ -74,6 +52,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MyTubeScreen(
+    educationOnly: Boolean,
+    onEducationOnlyChanged: (Boolean) -> Unit,
     ownAdsEnabled: Boolean,
     onOwnAdsChanged: (Boolean) -> Unit,
     backgroundAudio: Boolean,
@@ -85,16 +65,18 @@ private fun MyTubeScreen(
     downloadsEnabled: Boolean,
     onDownloadsEnabledChanged: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
     var tab by remember { mutableStateOf("Home") }
-    var query by remember { mutableStateOf("") }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("MyTube", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = { tab = "Search" }) { Icon(Icons.Default.Search, contentDescription = "Search") }
-                    IconButton(onClick = { tab = "Profile" }) { Icon(Icons.Default.AccountCircle, contentDescription = "Profile") }
+                    IconButton(onClick = { tab = "Verify" }) {
+                        Icon(Icons.Default.VerifiedUser, contentDescription = "Authenticity checker")
+                    }
+                    IconButton(onClick = { tab = "Profile" }) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
+                    }
                 }
             )
         },
@@ -110,67 +92,151 @@ private fun MyTubeScreen(
         }
     ) { padding ->
         when (tab) {
-            "Search" -> Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-                OutlinedTextField(value = query, onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth(), label = { Text("Search YouTube") }, singleLine = true)
-                Spacer(Modifier.height(12.dp))
-                Text("Live search will be connected after a YouTube Data API key is configured.")
-            }
-            "Profile" -> Column(
+            "Verify" -> AuthenticityChecker(Modifier.fillMaxSize().padding(padding))
+            "Profile" -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Your account", style = MaterialTheme.typography.headlineSmall)
-                Text("Google sign-in is not configured yet.")
-                HorizontalDivider()
-                Text("Playback settings", style = MaterialTheme.typography.titleLarge)
-                SettingSwitch("Background audio", "For MyTube-owned or licensed audio only.", backgroundAudio, onBackgroundAudioChanged)
-                SettingSwitch("Picture-in-picture", "Floating video window for supported MyTube playback.", pictureInPicture, onPictureInPictureChanged)
-                SettingSwitch("Auto-play next", "Automatically continue supported MyTube playlists.", autoPlayNext, onAutoPlayNextChanged)
-                SettingSwitch("Allow downloads", "Only for videos you own or are licensed to download.", downloadsEnabled, onDownloadsEnabledChanged)
-                HorizontalDivider()
-                Text("App settings", style = MaterialTheme.typography.titleLarge)
-                SettingSwitch("Show MyTube ads", "Controls only ads owned by this app.", ownAdsEnabled, onOwnAdsChanged)
-                Text(
-                    "Playback and download controls are saved, but their media-player services are not connected yet. YouTube links currently open in the official YouTube app/browser. MyTube will not download YouTube videos or bypass YouTube background-play restrictions.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "This app does not hide or alter advertisements served by YouTube.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            else -> LazyColumn(Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                item { Text("Your account", style = MaterialTheme.typography.headlineSmall) }
+                item { Text("Google sign-in is not configured yet.") }
+                item { HorizontalDivider() }
+                item { Text("Feed preferences", style = MaterialTheme.typography.titleLarge) }
+                item { SettingSwitch("Education-only feed", "Hide entertainment and movie-clip content when a live feed is connected.", educationOnly, onEducationOnlyChanged) }
+                item { Text("Playback settings", style = MaterialTheme.typography.titleLarge) }
+                item { SettingSwitch("Background audio", "For MyTube-owned or licensed audio only.", backgroundAudio, onBackgroundAudioChanged) }
+                item { SettingSwitch("Picture-in-picture", "Floating video window for supported MyTube playback.", pictureInPicture, onPictureInPictureChanged) }
+                item { SettingSwitch("Auto-play next", "Automatically continue supported MyTube playlists.", autoPlayNext, onAutoPlayNextChanged) }
+                item { SettingSwitch("Allow downloads", "Only for videos you own or are licensed to download.", downloadsEnabled, onDownloadsEnabledChanged) }
+                item { HorizontalDivider() }
+                item { Text("App settings", style = MaterialTheme.typography.titleLarge) }
+                item { SettingSwitch("Show MyTube ads", "Controls only ads owned by this app.", ownAdsEnabled, onOwnAdsChanged) }
                 item {
-                    Text(when (tab) {
-                        "Shorts" -> "Shorts"
-                        "Subscriptions" -> "Subscriptions"
-                        "Library" -> "Your library"
-                        else -> "Discover"
-                    }, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Starter preview · live YouTube data is not connected yet.")
+                    Text(
+                        "The authenticity checker currently evaluates title, channel name and description text entered by you. It does not watch the video, verify every claim, or prove that a channel is trustworthy. Live YouTube search/feed is not connected yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                items(sampleVideos) { video ->
-                    Card(modifier = Modifier.fillMaxWidth().clickable {
-                        context.startActivity(Intent(Intent.ACTION_VIEW,
-                            Uri.parse("https://www.youtube.com/watch?v=${video.id}")))
-                    }, shape = RoundedCornerShape(16.dp)) {
-                        Column(Modifier.padding(14.dp)) {
-                            Surface(Modifier.fillMaxWidth().height(160.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp)) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.PlayCircle, contentDescription = "Open video", modifier = Modifier.size(58.dp))
-                                }
+                item {
+                    Text(
+                        "Playback and download controls are saved preferences only; their media services are not connected. YouTube links will use the official YouTube app/browser. MyTube will not extract or download YouTube streams or bypass background-play restrictions.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            else -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                item {
+                    Text(
+                        when (tab) {
+                            "Shorts" -> "Shorts"
+                            "Subscriptions" -> "Subscriptions"
+                            "Library" -> "Your library"
+                            else -> if (educationOnly) "Education feed" else "Discover"
+                        },
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                item {
+                    Card {
+                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Icon(Icons.Default.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(34.dp))
+                            Text(
+                                if (educationOnly) "Education-only mode is ON" else "Discover mode",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text("The live YouTube feed is not connected yet. No random demo videos are shown.")
+                            Button(onClick = { tab = "Verify" }, modifier = Modifier.fillMaxWidth()) {
+                                Icon(Icons.Default.Shield, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Check a video before watching")
                             }
-                            Spacer(Modifier.height(10.dp))
-                            Text(video.title, fontWeight = FontWeight.SemiBold)
-                            Text(video.channel, style = MaterialTheme.typography.bodySmall)
-                            Text("Opens with YouTube", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
+                item {
+                    Text(
+                        "Next integration: connect YouTube Data API search, then run these filters on each result before it enters this feed. API credentials must be configured securely and must not be committed to this public repository.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthenticityChecker(modifier: Modifier = Modifier) {
+    var title by remember { mutableStateOf("") }
+    var channel by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var report by remember { mutableStateOf<AuthenticityReport?>(null) }
+
+    LazyColumn(
+        modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text("Authenticity check", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Paste the video's public details. This free offline check looks for educational, source and clickbait signals.")
+        }
+        item {
+            OutlinedTextField(title, { title = it; report = null }, Modifier.fillMaxWidth(),
+                label = { Text("Video title") }, minLines = 2)
+        }
+        item {
+            OutlinedTextField(channel, { channel = it; report = null }, Modifier.fillMaxWidth(),
+                label = { Text("Channel name") }, singleLine = true)
+        }
+        item {
+            OutlinedTextField(description, { description = it; report = null }, Modifier.fillMaxWidth(),
+                label = { Text("Video description / source links") }, minLines = 5)
+        }
+        item {
+            Button(
+                onClick = { report = AuthenticityEngine.evaluate(title, channel, description) },
+                enabled = title.isNotBlank() && channel.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.FactCheck, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Check authenticity signals")
+            }
+        }
+        report?.let { result ->
+            item {
+                Card {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Metadata signal score", style = MaterialTheme.typography.titleMedium)
+                        Text("${result.score}/100", style = MaterialTheme.typography.displaySmall,
+                            color = when {
+                                result.score >= 75 -> MaterialTheme.colorScheme.primary
+                                result.score >= 55 -> MaterialTheme.colorScheme.tertiary
+                                else -> MaterialTheme.colorScheme.error
+                            }, fontWeight = FontWeight.Bold)
+                        Text(result.verdict, fontWeight = FontWeight.SemiBold)
+                        HorizontalDivider()
+                        Text("Positive signals", fontWeight = FontWeight.SemiBold)
+                        if (result.reasons.isEmpty()) Text("No positive signals detected.")
+                        result.reasons.forEach { Text("• $it") }
+                        Text("Warnings", fontWeight = FontWeight.SemiBold)
+                        if (result.warnings.isEmpty()) Text("No metadata warnings detected.")
+                        result.warnings.forEach { Text("• $it") }
+                    }
+                }
+            }
+            item {
+                Text(
+                    "Important: this is a simple text-based heuristic, not a fact-checking verdict. A high score is not proof that the video is true; open and verify the cited sources yourself.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -183,10 +249,7 @@ private fun SettingSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, fontWeight = FontWeight.Medium)
             Text(description, style = MaterialTheme.typography.bodySmall,
